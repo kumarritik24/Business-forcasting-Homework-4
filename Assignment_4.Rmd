@@ -1,0 +1,130 @@
+---
+title: "Assignment_4"
+author: "Ritik Kumar"
+date: "2024-10-06"
+output: html_document
+---
+
+```{r}
+library(forecast)
+library(ggplot2)
+library(readxl)
+
+#Import the dataset
+data<- read_excel("C:/Users/malho/Downloads/TotalQuestions_Stack_Overflow.xlsx")
+print(head(data))
+
+#Forcasting of Python questions by using Stack Overflow Dataset
+# Convert 'Month' to Date format and set it as index
+data$Month <- as.Date(data$Month)
+data_ts <- ts(data$Python, start=c(2008,9), frequency=12)
+
+# Plot the original time series data of Python Question from 2008-2022
+plot(data_ts, main="Python Questions Over Time", xlab="Time", ylab="Number of Questions")
+
+# Plot ACF to check for autocorrelations
+Acf(data_ts)
+
+# Mean Forecast
+mean_forecast <- meanf(data_ts, h=5)
+plot(mean_forecast)
+
+# Apply Naive Forecast Model
+naive_forecast <- naive(data_ts, h=5)
+plot(naive_forecast)
+
+# Random Walk Forecast Model
+rwf_forecast <- rwf(data_ts, h=5)
+rwf_drift_forecast <- rwf(data_ts, h=5, drift=TRUE)
+plot(rwf_forecast)
+plot(rwf_drift_forecast)
+
+# Seasonal Naive Forecast Model
+snaive_forecast <- snaive(data_ts, h=5)
+plot(snaive_forecast)
+
+# Moving Averages
+MA5_forecast <- ma(data_ts, order=5)
+MA9_forecast <- ma(data_ts, order=9)
+
+# what other attributes are there?
+attributes(naive_forecast)
+
+# Decomposition
+decompose_data <- decompose(data_ts)
+plot(decompose_data)
+
+# Apply ETS (Exponential Smoothing State Space) Model
+ets_model <- ets(data_ts)
+ets_forecast <- forecast(ets_model, h=5)
+plot(ets_forecast)
+summary(ets_model)
+
+# Apply Holt-Winters Forecast Model
+hw_forecast <- HoltWinters(data_ts)
+plot(hw_forecast)
+summary(hw_forecast)
+
+# Forecasting using Holt-Winters
+hw_forecast <- forecast(hw_forecast, h=5)
+plot(hw_forecast)
+
+# Plot all forecasts together in one chart
+plot(data_ts, main="Python Questions: Actual and Forecasts", xlab="Year", ylab="Number of Questions", col="black")
+lines(mean_forecast$mean, col="blue", lty=2)
+lines(naive_forecast$mean, col="red", lty=2)
+lines(rwf_forecast$mean, col="green", lty=2)
+lines(snaive_forecast$mean, col="purple", lty=2)
+lines(MA5_forecast, col="orange", lty=2)
+lines(MA9_forecast, col="pink", lty=2)
+lines(ets_forecast$mean, col="brown", lty=2)
+lines(hw_forecast$mean, col="cyan", lty=2)
+legend("topright", legend=c("Actual", "Mean Forecast", "Naive Forecast", "Random Walk", "Seasonal Naive", "MA5", "MA9", "ETS", "Holt-Winters"),
+       col=c("black", "blue", "red", "green", "purple", "orange", "pink", "brown", "cyan"), lty=2, cex=0.8)
+
+# Evaluate model errors
+mean(naive_forecast$residuals^2) # Naive Forecast MSE
+mean(ets_forecast$residuals^2) # ETS MSE
+
+# Compare accuracy of Naive, ETS, and Holt-Winters models
+naive_accuracy <- accuracy(naive_forecast)
+ets_accuracy <- accuracy(ets_forecast)
+hw_accuracy <- accuracy(hw_forecast)
+naive_accuracy
+ets_accuracy
+hw_accuracy
+
+# Calculate accuracy comparison for each model
+
+# Naive Forecast MSE
+naive_mse <- mean((naive_forecast$residuals)^2, na.rm=TRUE)
+
+# Mean Forecast MSE
+mean_mse <- mean((mean_forecast$residuals)^2, na.rm=TRUE)
+
+# Random Walk Forecast MSE
+rwf_mse <- mean((rwf_forecast$residuals)^2, na.rm=TRUE)
+
+# Seasonal Naive Forecast MSE
+snaive_mse <- mean((snaive_forecast$residuals)^2, na.rm=TRUE)
+
+# ETS Model MSE
+ets_mse <- mean((ets_forecast$residuals)^2, na.rm=TRUE)
+
+# Holt-Winters Model MSE
+hw_mse <- mean((hw_forecast$residuals)^2, na.rm=TRUE)
+
+# Compare MSE of the models
+mse_values <- c(mean_mse, naive_mse, rwf_mse, snaive_mse, ets_mse, hw_mse)
+model_names <- c("Mean Forecast", "Naive Forecast", "Random Walk Forecast", "Seasonal Naive Forecast", "ETS", "Holt-Winters")
+
+# Create a data frame to show the comparison
+mse_comparison <- data.frame(Model = model_names, MSE = mse_values)
+
+# Show the results
+print(mse_comparison)
+
+# State the best model based on the smallest MSE
+best_model <- model_names[which.min(mse_values)]
+cat("The best model based on MSE is:", best_model)
+```
